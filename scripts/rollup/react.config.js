@@ -1,9 +1,13 @@
-import { getPackageJSON, resolvePkgPath } from './utils';
+import { getBaseRollupPlugins, getPackageJSON, resolvePkgPath } from './utils';
+import generatePackageJson from 'rollup-plugin-generate-package-json';
+
 // 代表 React 打包配置
 const { name, module } = getPackageJSON('react');
+// react包的路径
 const pkgPath = resolvePkgPath(name);
+// react产物路径
 const pkgDistPath = resolvePkgPath(name, true);
-
+// 导出配置数组
 export default [
 	// React
 	{
@@ -11,9 +15,22 @@ export default [
 		output: {
 			file: `${pkgDistPath}/index.js`,
 			name: 'index.js',
+			// 兼容commonjs和esmodule的格式
 			format: 'umd'
 		},
-		plugins: []
+		plugins: [
+			...getBaseRollupPlugins(),
+			generatePackageJson({
+				inputFolder: pkgPath,
+				outputFolder: pkgDistPath,
+				baseContents: ({ name, description, version }) => ({
+					name,
+					description,
+					version,
+					main: 'index.js'
+				})
+			})
+		]
 	},
 	// jsx-runtime
 	{
@@ -32,6 +49,6 @@ export default [
 				format: 'umd'
 			}
 		],
-		plugins: []
+		plugins: getBaseRollupPlugins()
 	}
 ];
