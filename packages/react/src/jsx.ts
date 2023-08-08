@@ -29,7 +29,7 @@ const ReactElement = function (
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
+export const jsxDEV = (type: ElementType, config: any) => {
 	let key: Key = null;
 	const props: Props = {};
 	let ref: Ref = null;
@@ -53,17 +53,5 @@ export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
 		}
 	}
 
-	const maybeChildrenLength = maybeChildren.length;
-	if (maybeChildrenLength > 0) {
-		// [child] [child, child]
-		if (maybeChildrenLength === 1) {
-			props.children = maybeChildren[0];
-		} else {
-			props.children = maybeChildren;
-		}
-	}
-
 	return ReactElement(type, key, ref, props);
 };
-
-export const jsxDEV = jsx;

@@ -1,0 +1,7 @@
+lockfileVersion: 5.3
+
+specifiers:
+  react: ^1.0.0
+
+dependencies:
+  react: link:../../../../../../pnpm-global/5/node_modules/react
