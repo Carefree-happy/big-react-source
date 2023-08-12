@@ -1,6 +1,7 @@
 import { Key, Props, Ref } from 'shared/ReactTypes';
 import { WorkTag } from './workTags';
 import { Flags, NoFlags } from './flags';
+import { Container } from 'hostConfig';
 
 export class FiberNode {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,8 +20,11 @@ export class FiberNode {
 	index: number;
 
 	memoizedProps: Props | null;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	memoizedState: any;
 	alternate: FiberNode | null;
 	flags: Flags;
+	updateQueue: unknown;
 
 	// pendingProps 当前的 FiberNode, tag 指 fiberNode 类型
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
@@ -49,9 +53,53 @@ export class FiberNode {
 		this.pendingProps = pendingProps;
 		// 工作完了之后 props
 		this.memoizedProps = null;
+		this.memoizedState = null;
+		this.updateQueue = null;
+
 		// 用于在 fiberNode 和对应的另外一个 fiberNode 之间切换
 		this.alternate = null;
 		// 统称为副作用，存储标记
 		this.flags = NoFlags;
 	}
 }
+
+export class FiberRootNode {
+	// 保存数组环境挂载的节点, rootElement
+	container: Container;
+	current: FiberNode;
+	finishedWork: FiberNode | null;
+	constructor(container: Container, hostRootFiber: FiberNode) {
+		this.container = container;
+		this.current = hostRootFiber;
+		hostRootFiber.stateNode = this;
+		this.finishedWork = null;
+	}
+}
+
+// 这个方法传进来一个fiberNode，应该返回对应的另外一个fiberNode，方便切换
+export const createWorkInProcess = (
+	current: FiberNode,
+	pendingProps: Props
+): FiberNode => {
+	let wip = current.alternate;
+
+	if (wip === null) {
+		// 首屏渲染 mount
+		wip = new FiberNode(current.tag, pendingProps, current);
+		wip.type = current.type;
+		wip.alternate = current;
+		current.alternate = wip;
+	} else {
+		// update
+		wip.pendingProps = pendingProps;
+		wip.flags = NoFlags;
+	}
+
+	wip.type = current.type;
+	wip.updateQueue = current.updateQueue;
+	wip.child = current.child;
+	wip.memoizedProps = current.memoizedProps;
+	wip.memoizedState = current.memoizedState;
+
+	return wip;
+};

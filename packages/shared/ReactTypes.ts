@@ -13,3 +13,6 @@ export interface ReactElementType {
 	props: Props;
 	__mark: string;
 }
+
+// 对应 setState 两种触发更新的方式
+export type Action<State> = State | ((prevState: State) => State);

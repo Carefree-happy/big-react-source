@@ -1,13 +1,34 @@
 import { beginWork } from './beginWork';
 import { completeWork } from './completeWork';
-import { FiberNode } from './fiber';
+import { FiberNode, FiberRootNode, createWorkInProcess } from './fiber';
+import { HostRoot } from './workTags';
 
 // 主要实现一个完整的工作循环
 // 全局的指针指向正在工作的 fiberNode
 let workInProgress: FiberNode | null = null;
 
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+	// 在fiber中调度功能,
+	const root = markUpdateFormFiberToRoot(fiber);
+	renderRoot(root);
+}
+
+// 递归遍历到根节点
+function markUpdateFormFiberToRoot(fiber: FiberNode) {
+	let node = fiber;
+	let parent = node.return;
+	while (parent !== null) {
+		node = parent;
+		parent = node.return;
+	}
+	if (node.tag === HostRoot) {
+		return node.stateNode;
+	}
+	return null;
+}
+
 // 最终执行的方法
-function renderRoot(root: FiberNode) {
+function renderRoot(root: FiberRootNode) {
 	// 初始化
 	prepareRefreshStack(root);
 	// 执行递归的流程
@@ -23,8 +44,11 @@ function renderRoot(root: FiberNode) {
 }
 
 // workingProgress 指向当前遍历的第一个FiberNode
-function prepareRefreshStack(fiber: FiberNode) {
-	workInProgress = fiber;
+function prepareRefreshStack(root: FiberRootNode) {
+	// 之前是直接将 fiber 赋值给 workInProgress
+	// 知道了真实的工作流程后，知道传入的是 FiberRootNode
+	const workInProgress = createWorkInProcess(root.current, {});
+	return workInProgress;
 }
 
 // workInProgress 不为空就持续执行
