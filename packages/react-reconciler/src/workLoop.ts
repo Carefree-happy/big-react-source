@@ -37,10 +37,18 @@ function renderRoot(root: FiberRootNode) {
 			workLoop();
 			break;
 		} catch (e) {
-			console.log('workLoop 发生错误', e);
+			if (__DEV__) {
+				console.log('workLoop 发生错误', e);
+			}
 			workInProgress = null;
 		}
 	} while (true);
+
+	const finishedWork = root.current.alternate;
+	root.finishedWork = finishedWork;
+
+	// wip fiberNode树 树中的 flags
+	// commitRoot(root)
 }
 
 // workingProgress 指向当前遍历的第一个FiberNode
@@ -70,6 +78,7 @@ function performUnitOfWork(fiber: FiberNode) {
 	} else {
 		workInProgress = next;
 	}
+	return null;
 }
 
 function completeUnitOfWork(fiber: FiberNode) {
