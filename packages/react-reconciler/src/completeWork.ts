@@ -1,4 +1,5 @@
 import {
+	Container,
 	appendInitialChild,
 	createInstance,
 	createTextInstance
@@ -10,7 +11,7 @@ import { NoFlags } from './flags';
 // 递归中的归阶段
 export const completeWork = (wip: FiberNode) => {
 	// 递归中的归
-	const newProps = wip.pendingProps;
+	// const newProps = wip.pendingProps;
 	const current = wip.alternate;
 
 	switch (wip.tag) {
@@ -19,7 +20,8 @@ export const completeWork = (wip: FiberNode) => {
 				// update
 			} else {
 				// 1. 构建DOM
-				const instance = createInstance(wip.type, newProps);
+				// const instance = createInstance(wip.type, newProps);
+				const instance = createInstance(wip.type);
 				// 2. 将DOM插入DOM树中
 				appendAllChildren(instance, wip);
 				wip.stateNode = instance;
@@ -31,7 +33,8 @@ export const completeWork = (wip: FiberNode) => {
 				// update
 			} else {
 				// 1. 构建DOM
-				const instance = createTextInstance(wip.type, newProps.content);
+				// const instance = createTextInstance(wip.type, newProps.content);
+				const instance = createTextInstance(wip.type);
 				wip.stateNode = instance;
 			}
 			bubbleProperties(wip);
@@ -49,7 +52,7 @@ export const completeWork = (wip: FiberNode) => {
 	return wip;
 };
 
-function appendAllChildren(parent: FiberNode, wip: FiberNode) {
+function appendAllChildren(parent: Container, wip: FiberNode) {
 	let node = wip.child;
 
 	// 在 parent 节点下，插入 wip 节点
