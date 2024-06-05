@@ -28,8 +28,7 @@ const ReactElement = function (
 	return element;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const jsxDEV = (
+export const jsx = (
 	type: ElementType,
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	config: any,
@@ -42,13 +41,13 @@ export const jsxDEV = (
 
 	for (const prop in config) {
 		const val = config[prop];
-		if (props === 'key') {
+		if (prop === 'key') {
 			if (val !== undefined) {
 				key = '' + val;
 			}
 			continue;
 		}
-		if (props === 'ref') {
+		if (prop === 'ref') {
 			if (val !== undefined) {
 				ref = val;
 			}
@@ -68,5 +67,31 @@ export const jsxDEV = (
 		}
 	}
 
+	return ReactElement(type, key, ref, props);
+};
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+export const jsxDEV = (type: ElementType, config: any) => {
+	let key: Key = null;
+	const props: Props = {};
+	let ref: Ref = null;
+	for (const prop in config) {
+		const val = config[prop];
+		if (prop === 'key') {
+			if (val !== undefined) {
+				key = '' + val;
+			}
+			continue;
+		}
+		if (prop === 'ref') {
+			if (val !== undefined) {
+				ref = val;
+			}
+			continue;
+		}
+		if ({}.hasOwnProperty.call(config, prop)) {
+			props[prop] = val;
+		}
+	}
 	return ReactElement(type, key, ref, props);
 };

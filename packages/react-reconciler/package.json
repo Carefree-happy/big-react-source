@@ -1,8 +1,8 @@
 {
   "name": "react-reconciler",
   "version": "1.0.0",
-  "description": "React协调器",
-  "mudule": "index.ts",
+  "description": "react协调器",
+  "module": "index.ts",
   "dependencies": {
     "shared": "workspace: *"
   },

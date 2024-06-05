@@ -8,7 +8,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 	// 为什么设计成闭包，这样就能根据是否传newChild，返回不同的实现
 	function reconcileSingleElement(
 		returnFiber: FiberNode,
-		currentFiber: FiberNode | null,
+		_currentFiber: FiberNode | null,
 		element: ReactElementType
 	) {
 		// 根据element创建fiber
@@ -19,7 +19,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 
 	function reconcileSingleTextNode(
 		returnFiber: FiberNode,
-		currentFiber: FiberNode | null,
+		_currentFiber: FiberNode | null,
 		content: string | number
 	) {
 		const fiber = new FiberNode(HostText, { content }, null);

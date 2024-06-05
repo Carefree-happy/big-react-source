@@ -1,21 +1,32 @@
+/**
+ * 工作循环的文件
+ * @每一个fiber都是
+ * 1. 如果有子节点，遍历子节点  2、 没有子节点就遍历兄弟节点
+ * 2. 每一个fiber都是先beginWork 然后completeWork
+ */
 import { beginWork } from './beginWork';
 import { completeWork } from './completeWork';
-import { FiberNode, FiberRootNode, createWorkInProcess } from './fiber';
+import { FiberNode, FiberRootNode, createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './flags';
 import { HostRoot } from './workTags';
+import { commitMutationEffects } from './commitWork';
 
 // 主要实现一个完整的工作循环
 // 全局的指针指向正在工作的 fiberNode
 let workInProgress: FiberNode | null = null;
 
+function prepareFreshStack(root: FiberRootNode) {
+	workInProgress = createWorkInProgress(root.current, {});
+}
+
 export function scheduleUpdateOnFiber(fiber: FiberNode) {
 	// 在fiber中调度功能,
-	const root = markUpdateFormFiberToRoot(fiber);
+	const root = markUpdateFromFiberToRoot(fiber);
 	renderRoot(root);
 }
 
-// 递归遍历到根节点
-function markUpdateFormFiberToRoot(fiber: FiberNode) {
+// 从当前触发更新的fiber向上遍历到根节点fiber
+function markUpdateFromFiberToRoot(fiber: FiberNode) {
 	let node = fiber;
 	let parent = node.return;
 	while (parent !== null) {
@@ -28,18 +39,16 @@ function markUpdateFormFiberToRoot(fiber: FiberNode) {
 	return null;
 }
 
-// 最终执行的方法
 function renderRoot(root: FiberRootNode) {
-	// 初始化
-	prepareRefreshStack(root);
-	// 执行递归的流程
+	// 初始化，将workInProgress 指向第一个fiberNode
+	prepareFreshStack(root);
 	do {
 		try {
 			workLoop();
 			break;
 		} catch (e) {
 			if (__DEV__) {
-				console.log('workLoop 发生错误', e);
+				console.warn('workLoop发生错误', e);
 			}
 			workInProgress = null;
 		}
@@ -48,7 +57,7 @@ function renderRoot(root: FiberRootNode) {
 	const finishedWork = root.current.alternate;
 	root.finishedWork = finishedWork;
 
-	// wip fiberNode树 树中的 flags
+	// wip fiberNode树  树中的flags执行对应的操作
 	commitRoot(root);
 }
 
@@ -66,16 +75,16 @@ function commitRoot(root: FiberRootNode) {
 	// 重置操作
 	root.finishedWork = null;
 
-	// 判断是否存在3个字阶段需要执行的操作
+	// 判断是否存在3个子阶段需要执行的操作
 	// root flags root subtreeFlags
 	const subtreeHasEffect =
-		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
-	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+		(finishedWork.subtreeFlags & MutationMask) !== NoFlags; // 子节点是否有更新
+	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags; // 根节点是否更新
 
 	if (subtreeHasEffect || rootHasEffect) {
-		// beforeMution
+		// beforeMutation
 		// mutation Placement
-
+		commitMutationEffects(finishedWork);
 		root.current = finishedWork;
 		// layout
 	} else {
@@ -83,25 +92,17 @@ function commitRoot(root: FiberRootNode) {
 	}
 }
 
-// workingProgress 指向当前遍历的第一个FiberNode
-function prepareRefreshStack(root: FiberRootNode) {
-	// 之前是直接将 fiber 赋值给 workInProgress
-	// 知道了真实的工作流程后，知道传入的是 FiberRootNode
-	const workInProgress = createWorkInProcess(root.current, {});
-	return workInProgress;
-}
-
-// workInProgress 不为空就持续执行
 function workLoop() {
 	while (workInProgress !== null) {
 		performUnitOfWork(workInProgress);
 	}
 }
 
-function performUnitOfWork(fiber: FiberNode) {
+function performUnitOfWork(fiber: FiberNode): void {
 	// next是子Fiber或者为null
 	// 如果有子节点，就一直执行，遍历子节点
-	const next = beginWork(fiber);
+	const next = beginWork(fiber); // next 是fiber的子fiber 或者 是null
+	// 工作完成，需要将pendingProps 复制给 已经渲染的props
 	fiber.memoizedProps = fiber.pendingProps;
 
 	if (next === null) {
@@ -110,11 +111,10 @@ function performUnitOfWork(fiber: FiberNode) {
 	} else {
 		workInProgress = next;
 	}
-	return null;
 }
 
 function completeUnitOfWork(fiber: FiberNode) {
-	let node: FiberNode = fiber;
+	let node: FiberNode | null = fiber;
 	do {
 		completeWork(node);
 		const sibling = node.sibling;
@@ -123,11 +123,11 @@ function completeUnitOfWork(fiber: FiberNode) {
 			return;
 		}
 		// 这里本来应该不应该套一层，没想清楚什么时候父节点为空
-		if (node.return !== null) {
-			node = node.return;
-		}
+		// if (node.return !== null) {
+		// 	node = node.return;
+		// }
+		// workInProgress = node;
+		node = node.return;
 		workInProgress = node;
 	} while (node !== null);
 }
-
-export default renderRoot;

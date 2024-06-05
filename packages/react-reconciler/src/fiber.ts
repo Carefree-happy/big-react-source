@@ -79,7 +79,7 @@ export class FiberRootNode {
 }
 
 // 这个方法传进来一个fiberNode，应该返回对应的另外一个fiberNode，方便切换
-export const createWorkInProcess = (
+export const createWorkInProgress = (
 	current: FiberNode,
 	pendingProps: Props
 ): FiberNode => {
@@ -87,8 +87,8 @@ export const createWorkInProcess = (
 
 	if (wip === null) {
 		// 首屏渲染 mount
-		wip = new FiberNode(current.tag, pendingProps, current);
-		wip.type = current.type;
+		wip = new FiberNode(current.tag, pendingProps, current.key);
+		wip.stateNode = current.stateNode;
 		wip.alternate = current;
 		current.alternate = wip;
 	} else {

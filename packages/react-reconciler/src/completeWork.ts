@@ -5,13 +5,20 @@ import {
 	createTextInstance
 } from 'hostConfig';
 import { FiberNode } from './fiber';
-import { HostComponent, HostRoot, HostText } from './workTags';
+import {
+	FunctionComponent,
+	HostComponent,
+	HostRoot,
+	HostText
+} from './workTags';
 import { NoFlags } from './flags';
 
-// 递归中的归阶段
+/**
+ * 递归中的归阶段
+ */
 export const completeWork = (wip: FiberNode) => {
 	// 递归中的归
-	// const newProps = wip.pendingProps;
+	const newProps = wip.pendingProps;
 	const current = wip.alternate;
 
 	switch (wip.tag) {
@@ -34,9 +41,13 @@ export const completeWork = (wip: FiberNode) => {
 			} else {
 				// 1. 构建DOM
 				// const instance = createTextInstance(wip.type, newProps.content);
-				const instance = createTextInstance(wip.type);
+				const instance = createTextInstance(newProps.content);
+				// 2. 将DOM插入到DOM树中
 				wip.stateNode = instance;
 			}
+			bubbleProperties(wip);
+			return null;
+		case FunctionComponent:
 			bubbleProperties(wip);
 			return null;
 		case HostRoot:
@@ -52,6 +63,18 @@ export const completeWork = (wip: FiberNode) => {
 	return wip;
 };
 
+/**
+ * 在parent的节点下，插入wip
+ * 难点： 是fiber对应的节点和Dom树不对应
+ *
+ * function A () {
+ *   return <div>11</div>
+ * }
+ *
+ * <p><A /> <p/>  -> 对应的Dom 是A组件的子元素 <p><div>11</div></p>
+ * @param {FiberNode} parent
+ * @param {FiberNode} wip
+ */
 function appendAllChildren(parent: Container, wip: FiberNode) {
 	let node = wip.child;
 
@@ -59,10 +82,11 @@ function appendAllChildren(parent: Container, wip: FiberNode) {
 	// wip 本身可能不是一个 DOM 节点
 	// 所以往上往下递归寻找其中的 HostComponent 和 HostText 节点
 	while (node !== null) {
-		if (node.tag === HostComponent || node?.tag === HostText) {
+		if (node?.tag === HostComponent || node?.tag === HostText) {
 			appendInitialChild(parent, node?.stateNode);
 		} else if (node.child !== null) {
 			node.child.return = node;
+			// 继续向下查找
 			node = node.child;
 			continue;
 		}
@@ -72,9 +96,10 @@ function appendAllChildren(parent: Container, wip: FiberNode) {
 		}
 
 		while (node.sibling === null) {
-			if (node.return === null || node.return == wip) {
+			if (node.return === null || node.return === wip) {
 				return;
 			}
+			// 向上找
 			node = node?.return;
 		}
 		node.sibling.return = node.return;
