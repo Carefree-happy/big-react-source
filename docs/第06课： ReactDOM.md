@@ -34,6 +34,11 @@ pnpm link --global
 + react-dom 1.0.0 <- ../../../../developer/react/big-react-source/dist/node_modules/react-dom
 ```
 
+```
+pnpm unlink --global react
+pnpm unlink --global react-dom
+```
+
 ## 新建react项目
 ```
 npx create-react-app apps
