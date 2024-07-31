@@ -1,7 +1,6 @@
 import { FiberNode } from './fiber';
 import internals from 'shared/internals';
-import { Dispatcher } from 'react/src/currentDispatcher';
-import { Dispatch } from 'react/src/currentDispatcher';
+import { Dispatcher, Dispatch } from 'react/src/currentDispatcher';
 import {
 	createUpdate,
 	createUpdateQueue,
@@ -64,6 +63,7 @@ function mountState<State>(
 	// useState是可以触发更新的
 	const queue = createUpdateQueue<State>();
 	hook.updateQueue = queue;
+	hook.memoizedState = memoizedState;
 
 	//@ts-ignore
 	const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
