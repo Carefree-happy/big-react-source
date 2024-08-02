@@ -4,13 +4,12 @@ import { Flags, NoFlags } from './flags';
 import { Container } from 'hostConfig';
 
 export class FiberNode {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	type: any;
 	tag: WorkTag;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	pendingProps: any;
 	key: Key;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	stateNode: any;
 	ref: Ref;
 
@@ -20,12 +19,13 @@ export class FiberNode {
 	index: number;
 
 	memoizedProps: Props | null;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	memoizedState: any;
 	alternate: FiberNode | null;
 	flags: Flags;
 	subtreeFlags: Flags;
 	updateQueue: unknown;
+	deletions: FiberNode[] | null;
 
 	// pendingProps 当前的 FiberNode, tag 指 fiberNode 类型
 	constructor(tag: WorkTag, pendingProps: Props, key: Key) {
@@ -62,6 +62,7 @@ export class FiberNode {
 		// 统称为副作用，存储标记
 		this.flags = NoFlags;
 		this.subtreeFlags = NoFlags;
+		this.deletions = null; // 保存需要删除的子fiberNode
 	}
 }
 
@@ -94,8 +95,10 @@ export const createWorkInProgress = (
 	} else {
 		// update
 		wip.pendingProps = pendingProps;
+		// 清掉副作用（上一次更新遗留下来的）
 		wip.flags = NoFlags;
 		wip.subtreeFlags = NoFlags;
+		wip.deletions = null;
 	}
 
 	wip.type = current.type;
