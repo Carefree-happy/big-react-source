@@ -5,8 +5,8 @@ import {
 	Ref,
 	Type,
 	ReactElementType
-} from 'shared/ElementType';
-import { REACT_ELEMENT_TYPE } from './../../shared/ReactSymbol';
+} from 'shared/ReactTypes';
+import { REACT_ELEMENT_TYPE } from 'shared/ReactSymbols';
 
 const ReactElement = function (
 	type: Type,
