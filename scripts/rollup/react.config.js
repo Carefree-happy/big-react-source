@@ -4,7 +4,7 @@ import { getBaseRollupPlugins, getPackageJSON, resolvePkgPath } from './utils';
 const { name, module } = getPackageJSON('react');
 
 const pkgPath = resolvePkgPath(name);
-
+console.log(module);
 const pkgDistPath = resolvePkgPath(name, true);
 
 export default [
@@ -12,8 +12,8 @@ export default [
 	{
 		input: `${pkgPath}/${module}`,
 		output: {
-			file: `${pkgDistPath}/${module}`,
-			name: 'index.js',
+			file: `${pkgDistPath}/index.js`,
+			name: 'react',
 			format: 'umd'
 		},
 		plugins: [
