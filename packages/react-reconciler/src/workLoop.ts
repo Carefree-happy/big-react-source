@@ -1,14 +1,32 @@
 import { beginWork } from './beginWork';
 import { completeWork } from './completeWork';
-import { FiberNode } from './fiber';
+import { createWorkInProgress, FiberNode, FiberRootNode } from './fiber';
+import { HostRoot } from './workTags';
 
 let workInProgress: FiberNode | null = null;
 
-function prepareFreshStack(fiber: FiberNode) {
-	workInProgress = fiber;
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+	const root = markUpdatedFormFiberToRoot(fiber);
+	renderRoot(root);
 }
 
-export function renderRoot(root: FiberNode) {
+function markUpdatedFormFiberToRoot(fiber: FiberNode) {
+	let node = fiber;
+	let parent = node.return;
+	while (parent !== null) {
+		node = parent;
+		parent = node.return;
+	}
+	if (node.tag === HostRoot) {
+		return node.stateNode;
+	}
+}
+
+function prepareFreshStack(root: FiberRootNode) {
+	workInProgress = createWorkInProgress(root.current, {});
+}
+
+export function renderRoot(root: FiberRootNode) {
 	prepareFreshStack(root);
 
 	do {
