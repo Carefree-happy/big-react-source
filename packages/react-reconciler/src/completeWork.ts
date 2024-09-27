@@ -1,5 +1,6 @@
 import {
 	appendInitialChild,
+	Container,
 	createInstance,
 	createTextInstance
 } from 'hostConfig';
@@ -16,9 +17,12 @@ export const completeWork = (wip: FiberNode) => {
 			if (current !== null && wip.stateNode) {
 				// update
 			} else {
-				const instance = createInstance(wip.type, newProps);
-				appendAllChildren(instance, wip);
-				wip.stateNode = instance;
+				// const instance = createInstance(wip.type, newProps);
+				if (wip.type !== null) {
+					const instance = createInstance(wip.type);
+					appendAllChildren(instance, wip);
+					wip.stateNode = instance;
+				}
 			}
 			bubbleProperties(wip);
 			return null;
@@ -42,7 +46,7 @@ export const completeWork = (wip: FiberNode) => {
 	}
 };
 
-function appendAllChildren(parent: FiberNode, wip: FiberNode) {
+function appendAllChildren(parent: Container, wip: FiberNode) {
 	let node = wip.child;
 
 	while (node !== null) {
