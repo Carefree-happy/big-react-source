@@ -74,7 +74,7 @@ function appendPlacementNodeIntoContainer(
 	hostParent: Container
 ) {
 	if (finisherWork.tag === HostComponent || finisherWork.tag === HostText) {
-		appendChildToContainer(finisherWork.stateNode, hostParent);
+		appendChildToContainer(hostParent, finisherWork.stateNode);
 		return;
 	}
 
