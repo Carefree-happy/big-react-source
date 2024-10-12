@@ -1,4 +1,4 @@
-import { Action } from 'shared/ReactTypes';
+import type { Action } from 'shared/ReactTypes';
 
 export interface Update<State> {
 	action: Action<State>;
@@ -34,17 +34,17 @@ export const enqueueUpdate = <State>(
 export const processUpdateQueue = <State>(
 	baseState: State,
 	pendingUpdate: Update<State> | null
-): { memoizedState: State } => {
+): { memorizedState: State } => {
 	const result: ReturnType<typeof processUpdateQueue<State>> = {
-		memoizedState: baseState
+		memorizedState: baseState
 	};
 
 	if (pendingUpdate !== null) {
 		const action = pendingUpdate.action;
 		if (action instanceof Function) {
-			result.memoizedState = action(baseState);
+			result.memorizedState = action(baseState);
 		} else {
-			result.memoizedState = action;
+			result.memorizedState = action;
 		}
 	}
 

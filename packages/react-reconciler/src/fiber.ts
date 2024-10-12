@@ -1,14 +1,16 @@
-import { Props, Key, Ref, ReactElementType } from 'shared/ReactTypes';
-import { FunctionComponent, HostComponent, WorkTag } from './workTags';
-import { Flags, NoFlags } from './fiberFlags';
-import { Container } from 'hostConfig';
+import type { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
+import type { Container } from 'hostConfig';
+import type { WorkTag } from './workTags';
+import { FunctionComponent, HostComponent } from './workTags';
+import type { Flags } from './fiberFlags';
+import { NoFlags } from './fiberFlags';
 
 export class FiberNode {
 	tag: WorkTag;
 	pendingProps: Props;
 	key: Key;
 	stateNode: any;
-	type: null;
+	type: any;
 	ref: Ref;
 
 	return: FiberNode | null;
@@ -86,7 +88,7 @@ export const createWorkInProgress = (
 	return wip;
 };
 
-export function createFiberFromElement(element: ReactElementType) {
+export function createFiberFromElement(element: ReactElementType): FiberNode {
 	const { type, key, props } = element;
 	let fiberTag: WorkTag = FunctionComponent;
 

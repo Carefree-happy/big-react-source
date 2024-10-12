@@ -1,6 +1,8 @@
 import { beginWork } from './beginWork';
+import { commitMutationEffects } from './commitWork';
 import { completeWork } from './completeWork';
-import { createWorkInProgress, FiberNode, FiberRootNode } from './fiber';
+import type { FiberNode, FiberRootNode } from './fiber';
+import { createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
 import { HostRoot } from './workTags';
 
@@ -21,6 +23,7 @@ function markUpdatedFormFiberToRoot(fiber: FiberNode) {
 	if (node.tag === HostRoot) {
 		return node.stateNode;
 	}
+	return null;
 }
 
 function prepareFreshStack(root: FiberRootNode) {
@@ -61,11 +64,13 @@ function commitRoot(root: FiberRootNode) {
 
 	root.finishedWork = null;
 
-	const subtreeHasEffect =
+	// 判断是否存在三个子阶段需要执行的操作
+	const subtreeHasEffects =
 		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
-	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+	const rootHasEffects = (finishedWork.flags & MutationMask) !== NoFlags;
 
-	if (subtreeHasEffect || rootHasEffect) {
+	if (subtreeHasEffects || rootHasEffects) {
+		commitMutationEffects(finishedWork);
 		root.current = finishedWork;
 	} else {
 		root.current = finishedWork;
@@ -100,5 +105,6 @@ function completeUnitOfWork(fiber: FiberNode) {
 			return;
 		}
 		node = node.return;
+		workInProgress = node;
 	} while (node !== null);
 }

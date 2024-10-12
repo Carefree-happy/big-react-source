@@ -1,5 +1,6 @@
-import { appendChildToContainer, Container } from 'hostConfig';
-import { FiberNode, FiberRootNode } from './fiber';
+import type { Container } from 'hostConfig';
+import { appendChildToContainer } from 'hostConfig';
+import type { FiberNode, FiberRootNode } from './fiber';
 import { MutationMask, NoFlags, Placement } from './fiberFlags';
 import { HostComponent, HostRoot, HostText } from './workTags';
 
@@ -70,15 +71,14 @@ function getHostParent(fiber: FiberNode): Container | null {
 }
 
 function appendPlacementNodeIntoContainer(
-	finisherWork: FiberNode,
+	finishedWork: FiberNode,
 	hostParent: Container
 ) {
-	if (finisherWork.tag === HostComponent || finisherWork.tag === HostText) {
-		appendChildToContainer(hostParent, finisherWork.stateNode);
+	if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
+		appendChildToContainer(hostParent, finishedWork.stateNode);
 		return;
 	}
-
-	const child = finisherWork.child;
+	const child = finishedWork.child;
 	if (child !== null) {
 		appendPlacementNodeIntoContainer(child, hostParent);
 		let sibling = child.sibling;
