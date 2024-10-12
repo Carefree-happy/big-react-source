@@ -1,6 +1,6 @@
-import { ReactElementType } from 'shared/ReactTypes';
-import { createFiberFromElement, FiberNode } from './fiber';
+import type { ReactElementType } from 'shared/ReactTypes';
 import { REACT_ELEMENT_TYPE } from 'shared/ReactSymbols';
+import { FiberNode, createFiberFromElement } from './fiber';
 import { HostText } from './workTags';
 import { Placement } from './fiberFlags';
 
@@ -51,7 +51,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 			}
 		}
 
-		if (typeof newChild === 'string' && typeof newChild === 'number') {
+		if (typeof newChild === 'string' || typeof newChild === 'number') {
 			return placeSingleChild(
 				reconcileSingleTextNode(returnFiber, currentFiber, newChild)
 			);
