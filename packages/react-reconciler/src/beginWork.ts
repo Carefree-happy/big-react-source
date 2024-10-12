@@ -1,9 +1,17 @@
-import { ReactElementType } from 'shared/ReactTypes';
-import { FiberNode } from './fiber';
-import { processUpdateQueue, UpdateQueue } from './updateQueue';
-import { HostComponent, HostRoot, HostText } from './workTags';
+import type { ReactElementType } from 'shared/ReactTypes';
 import { mountChildFibers, reconcileChildFibers } from './childFibers';
+import type { FiberNode } from './fiber';
+import { renderWithHooks } from './fiberHooks';
+import type { UpdateQueue } from './updateQueue';
+import { processUpdateQueue } from './updateQueue';
+import {
+	FunctionComponent,
+	HostComponent,
+	HostRoot,
+	HostText
+} from './workTags';
 
+// 递归中的递阶段
 export const beginWork = (wip: FiberNode) => {
 	switch (wip.tag) {
 		case HostRoot:
@@ -12,22 +20,30 @@ export const beginWork = (wip: FiberNode) => {
 			return updateHostComponent(wip);
 		case HostText:
 			return null;
+		case FunctionComponent:
+			return updateFunctionComponent(wip);
 		default:
 			if (__DEV__) {
-				console.warn('beginWork未实现的类型');
+				console.warn('beginWork: 未知的 fiberNode 类型');
 			}
-			break;
 	}
 	return null;
 };
+
+function updateFunctionComponent(wip: FiberNode) {
+	// 执行 fc，得到 children
+	const nextChildren = renderWithHooks(wip);
+	reconcileChildren(wip, nextChildren);
+	return wip.child;
+}
 
 function updateHostRoot(wip: FiberNode) {
 	const baseState = wip.memorizedState;
 	const updateQueue = wip.updateQueue as UpdateQueue<Element>;
 	const pending = updateQueue.shared.pending;
 	updateQueue.shared.pending = null;
-	const { memoizedState } = processUpdateQueue(baseState, pending);
-	wip.memorizedState = memoizedState;
+	const { memorizedState } = processUpdateQueue(baseState, pending);
+	wip.memorizedState = memorizedState;
 
 	const nextChildren = wip.memorizedState;
 	reconcileChildren(wip, nextChildren);
@@ -43,9 +59,9 @@ function updateHostComponent(wip: FiberNode) {
 
 function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
 	const current = wip.alternate;
-	if (current !== null) {
-		wip.child = reconcileChildFibers(wip, current?.child, children);
-	} else {
+	if (current === null) {
 		wip.child = mountChildFibers(wip, null, children);
+	} else {
+		wip.child = reconcileChildFibers(wip, current.child, children);
 	}
 }

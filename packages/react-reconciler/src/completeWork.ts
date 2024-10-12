@@ -1,11 +1,16 @@
+import type { Container } from 'hostConfig';
 import {
 	appendInitialChild,
-	Container,
 	createInstance,
 	createTextInstance
 } from 'hostConfig';
-import { FiberNode } from './fiber';
-import { HostComponent, HostRoot, HostText } from './workTags';
+import type { FiberNode } from './fiber';
+import {
+	FunctionComponent,
+	HostComponent,
+	HostRoot,
+	HostText
+} from './workTags';
 import { NoFlags } from './fiberFlags';
 
 export const completeWork = (wip: FiberNode) => {
@@ -14,20 +19,17 @@ export const completeWork = (wip: FiberNode) => {
 
 	switch (wip.tag) {
 		case HostComponent:
-			if (current !== null && wip.stateNode) {
+			if (current !== null && current.stateNode) {
 				// update
 			} else {
-				// const instance = createInstance(wip.type, newProps);
-				if (wip.type !== null) {
-					const instance = createInstance(wip.type);
-					appendAllChildren(instance, wip);
-					wip.stateNode = instance;
-				}
+				const instance = createInstance(wip.type);
+				appendAllChildren(instance, wip);
+				wip.stateNode = instance;
 			}
 			bubbleProperties(wip);
 			return null;
 		case HostText:
-			if (current !== null && wip.stateNode) {
+			if (current !== null && current.stateNode) {
 				// update
 			} else {
 				const instance = createTextInstance(newProps.content);
@@ -38,11 +40,13 @@ export const completeWork = (wip: FiberNode) => {
 		case HostRoot:
 			bubbleProperties(wip);
 			return null;
+		case FunctionComponent:
+			bubbleProperties(wip);
+			return null;
 		default:
 			if (__DEV__) {
-				console.warn('completeWork未实现的类型');
+				console.warn('completeWork: 未处理的 CompleteWork 类型');
 			}
-			break;
 	}
 };
 
@@ -50,20 +54,19 @@ function appendAllChildren(parent: Container, wip: FiberNode) {
 	let node = wip.child;
 
 	while (node !== null) {
-		if (node.tag === HostComponent || node.tag === HostText) {
-			appendInitialChild(parent, node?.stateNode);
-		} else if (node.child !== null) {
+		if (node?.tag === HostComponent || node?.tag === HostText) {
+			appendInitialChild(parent, node.stateNode);
+		} else if (node?.child !== null) {
 			node.child.return = node;
 			node = node.child;
 			continue;
 		}
-
 		if (node === wip) {
 			return;
 		}
 
-		while (node.sibling === null) {
-			if (node.return === null || node.return === wip) {
+		while (node?.sibling === null) {
+			if (node?.return === null || node?.return === wip) {
 				return;
 			}
 			node = node.return;
