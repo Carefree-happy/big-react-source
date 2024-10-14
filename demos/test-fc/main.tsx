@@ -1,10 +1,13 @@
-import React from 'react';
+import { useState } from 'react';
 import ReactDOM from 'react-dom/client';
 
 function App() {
+	const [num, setNum] = useState(1);
+	window.setNum = setNum;
 	return (
 		<div>
-			<Child />
+			{num}
+			{/* <Child /> */}
 		</div>
 	);
 }
