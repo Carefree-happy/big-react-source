@@ -12,8 +12,8 @@ const ReactElement = function (
 	key: Key,
 	ref: Ref,
 	props: Props
-): ReactElementType {
-	const element = {
+) {
+	const element: ReactElementType = {
 		$$typeof: REACT_ELEMENT_TYPE,
 		type,
 		key,
@@ -25,7 +25,19 @@ const ReactElement = function (
 	return element;
 };
 
-export const jsx = (type: ElementType, config: any) => {
+export const isValidElement = (object: any) => {
+	return (
+		typeof object === 'object' &&
+		object !== null &&
+		object.$$typeof === REACT_ELEMENT_TYPE
+	);
+};
+
+export const jsx = function (
+	type: ElementType,
+	config: any,
+	...maybeChildren: any
+) {
 	let key: Key = null;
 	const props: Props = {};
 	let ref: Ref = null;
@@ -49,16 +61,14 @@ export const jsx = (type: ElementType, config: any) => {
 		}
 	}
 
-	// const maybeChildrenLength = maybeChildren.length;
-	// if (maybeChildrenLength) {
-	// 	if (maybeChildrenLength === 1) {
-	// 		props.children = maybeChildren[0];
-	// 	} else {
-	// 		props.children = maybeChildren;
-	// 	}
-	// }
-
+	const maybeChildrenLength = maybeChildren.length;
+	if (maybeChildrenLength) {
+		if (maybeChildrenLength === 1) props.children = maybeChildren[0];
+		else props.children = maybeChildren;
+	}
 	return ReactElement(type, key, ref, props);
 };
 
-export const jsxDEV = jsx;
+export const jsxDEV = (type: ElementType, config: any) => {
+	return jsx(type, config);
+};
