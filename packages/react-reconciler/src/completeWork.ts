@@ -11,7 +11,10 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags } from './fiberFlags';
+import { NoFlags, Update } from './fiberFlags';
+function markUpdate(fiber: FiberNode) {
+	fiber.flags |= Update;
+}
 
 export const completeWork = (wip: FiberNode) => {
 	const newProps = wip.pendingProps;
@@ -31,6 +34,11 @@ export const completeWork = (wip: FiberNode) => {
 		case HostText:
 			if (current !== null && current.stateNode) {
 				// update
+				const oldText = current.memorizedProps.content;
+				const newText = newProps.content;
+				if (oldText !== newText) {
+					markUpdate(wip);
+				}
 			} else {
 				const instance = createTextInstance(newProps.content);
 				wip.stateNode = instance;
