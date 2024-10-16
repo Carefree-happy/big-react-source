@@ -69,6 +69,6 @@ export const jsx = function (
 	return ReactElement(type, key, ref, props);
 };
 
-export const jsxDEV = (type: ElementType, config: any) => {
+export function jsxDEV(type: ElementType, config: any) {
 	return jsx(type, config);
-};
+}
