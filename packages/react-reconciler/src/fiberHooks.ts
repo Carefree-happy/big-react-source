@@ -10,11 +10,12 @@ import {
 	processUpdateQueue
 } from './updateQueue';
 import { scheduleUpdateOnFiber } from './workLoop';
-import { requestUpdateLane } from './fiberLanes';
+import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
 
 let currentlyRenderingFiber: FiberNode | null = null;
 let workInProgressHook: Hook | null = null;
 let currentHook: Hook | null = null;
+let renderLane: Lane = NoLane;
 
 const { currentDispatcher } = internals;
 
@@ -32,10 +33,11 @@ const HooksDispatcherOnUpdate: Dispatcher = {
 	useState: updateState
 };
 
-export function renderWithHooks(wip: FiberNode) {
+export function renderWithHooks(wip: FiberNode, lane: Lane) {
 	currentlyRenderingFiber = wip;
 	// 重置，存储当前 fiber 的 hooks
 	wip.memorizedState = null;
+	renderLane = lane;
 
 	const current = wip.alternate;
 	if (current !== null) {
@@ -51,6 +53,7 @@ export function renderWithHooks(wip: FiberNode) {
 	const children = Component(props);
 
 	currentlyRenderingFiber = null;
+	renderLane = NoLane;
 	return children;
 }
 
@@ -80,9 +83,14 @@ function updateState<State>(): [State, Dispatch<State>] {
 
 	const queue = hook.updateQueue as UpdateQueue<State>;
 	const pending = queue.shared.pending;
+	queue.shared.pending = null;
 
 	if (pending !== null) {
-		const { memorizedState } = processUpdateQueue(hook.memorizedState, pending);
+		const { memorizedState } = processUpdateQueue(
+			hook.memorizedState,
+			pending,
+			renderLane
+		);
 		hook.memorizedState = memorizedState;
 	}
 

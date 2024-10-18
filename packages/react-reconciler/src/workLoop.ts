@@ -9,6 +9,7 @@ import {
 	NoLane,
 	SyncLane,
 	getHighestPriorityLane,
+	markRootFinished,
 	mergeLanes
 } from './fiberLanes';
 import { HostRoot } from './workTags';
@@ -16,6 +17,7 @@ import { scheduleMicrotask } from 'hostConfig';
 import { flushSyncCallbacks, scheduleSyncCallback } from './syncTaskQueue';
 
 let workInProgress: FiberNode | null = null;
+let wipRootRenderLane: Lane = NoLane;
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	const root = markUpdatedFormFiberToRoot(fiber);
@@ -61,8 +63,9 @@ function markUpdatedFormFiberToRoot(fiber: FiberNode) {
 	return null;
 }
 
-function prepareFreshStack(root: FiberRootNode) {
+function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 	workInProgress = createWorkInProgress(root.current, {});
+	wipRootRenderLane = lane;
 }
 
 export function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
@@ -71,7 +74,12 @@ export function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
 		ensureRootIsScheduled(root);
 		return;
 	}
-	prepareFreshStack(root);
+
+	if (__DEV__) {
+		console.warn('(performSyncWorkOnRoot)', 'render阶段开始');
+	}
+
+	prepareFreshStack(root, lane);
 
 	do {
 		try {
@@ -87,6 +95,8 @@ export function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
 
 	const finishedWork = root.current.alternate;
 	root.finishedWork = finishedWork;
+	root.finishedLane = lane;
+	wipRootRenderLane = NoLane;
 
 	commitRoot(root);
 }
@@ -101,8 +111,13 @@ function commitRoot(root: FiberRootNode) {
 	if (__DEV__) {
 		console.warn('commit阶段开始', finishedWork);
 	}
-
+	const lane = root.finishedLane;
+	if (lane === NoLane && __DEV__) {
+		console.error('(commitRoot)', 'commit阶段finishedLane不应该是NoLane');
+	}
 	root.finishedWork = null;
+	root.finishedLane = NoLane;
+	markRootFinished(root, lane);
 
 	// 判断是否存在三个子阶段需要执行的操作
 	const subtreeHasEffects =
@@ -124,7 +139,7 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
-	const next = beginWork(fiber);
+	const next = beginWork(fiber, wipRootRenderLane);
 	fiber.memorizedProps = fiber.pendingProps;
 
 	if (next === null) {
