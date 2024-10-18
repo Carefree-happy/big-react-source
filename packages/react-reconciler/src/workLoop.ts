@@ -4,13 +4,19 @@ import { completeWork } from './completeWork';
 import type { FiberNode, FiberRootNode } from './fiber';
 import { createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
+import { Lane, mergeLanes } from './fiberLanes';
 import { HostRoot } from './workTags';
 
 let workInProgress: FiberNode | null = null;
 
-export function scheduleUpdateOnFiber(fiber: FiberNode) {
+export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	const root = markUpdatedFormFiberToRoot(fiber);
+	markRootUpdated(root, lane);
 	renderRoot(root);
+}
+
+function markRootUpdated(root: FiberRootNode, lane: Lane) {
+	root.pendingLanes = mergeLanes(root.pendingLanes, lane);
 }
 
 function markUpdatedFormFiberToRoot(fiber: FiberNode) {

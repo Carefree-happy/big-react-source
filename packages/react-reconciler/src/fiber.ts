@@ -5,6 +5,7 @@ import { Fragment } from './workTags';
 import { FunctionComponent, HostComponent } from './workTags';
 import type { Flags } from './fiberFlags';
 import { NoFlags } from './fiberFlags';
+import { Lane, Lanes, NoLane, NoLanes } from './fiberLanes';
 
 export class FiberNode {
 	tag: WorkTag;
@@ -56,12 +57,16 @@ export class FiberRootNode {
 	container: Container;
 	current: FiberNode;
 	finishedWork: FiberNode | null;
+	pendingLanes: Lanes;
+	finishedLane: Lane;
 
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
 		this.current = hostRootFiber;
 		hostRootFiber.stateNode = this;
 		this.finishedWork = null;
+		this.pendingLanes = NoLanes;
+		this.finishedLane = NoLane;
 	}
 }
 
