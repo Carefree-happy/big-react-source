@@ -4,15 +4,44 @@ import { completeWork } from './completeWork';
 import type { FiberNode, FiberRootNode } from './fiber';
 import { createWorkInProgress } from './fiber';
 import { MutationMask, NoFlags } from './fiberFlags';
-import { Lane, mergeLanes } from './fiberLanes';
+import {
+	Lane,
+	NoLane,
+	SyncLane,
+	getHighestPriorityLane,
+	mergeLanes
+} from './fiberLanes';
 import { HostRoot } from './workTags';
+import { scheduleMicrotask } from 'hostConfig';
+import { flushSyncCallbacks, scheduleSyncCallback } from './syncTaskQueue';
 
 let workInProgress: FiberNode | null = null;
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 	const root = markUpdatedFormFiberToRoot(fiber);
 	markRootUpdated(root, lane);
-	renderRoot(root);
+	ensureRootIsScheduled(root);
+}
+
+function ensureRootIsScheduled(root: FiberRootNode) {
+	const updateLane = getHighestPriorityLane(root.pendingLanes);
+	if (updateLane === NoLane) {
+		return;
+	}
+	if (updateLane === SyncLane) {
+		if (__DEV__) {
+			console.log(
+				'(ensureRootIsScheduled)',
+				'在微任务中调度，优先级：',
+				updateLane
+			);
+			scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane));
+			scheduleMicrotask(flushSyncCallbacks);
+		}
+	} else {
+		// 其它优先级，用宏任务调度
+		// 与 vue，svelte 等框架不同的地方
+	}
 }
 
 function markRootUpdated(root: FiberRootNode, lane: Lane) {
@@ -36,7 +65,12 @@ function prepareFreshStack(root: FiberRootNode) {
 	workInProgress = createWorkInProgress(root.current, {});
 }
 
-export function renderRoot(root: FiberRootNode) {
+export function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
+	const nextLanes = getHighestPriorityLane(root.pendingLanes);
+	if (nextLanes !== SyncLane) {
+		ensureRootIsScheduled(root);
+		return;
+	}
 	prepareFreshStack(root);
 
 	do {
@@ -45,7 +79,7 @@ export function renderRoot(root: FiberRootNode) {
 			break;
 		} catch (e) {
 			if (__DEV__) {
-				console.log('workLoop 发生错误', e);
+				console.log('workLoop 发生错误', e, lane);
 			}
 			workInProgress = null;
 		}

@@ -13,3 +13,7 @@ export function mergeLanes(a: Lane, b: Lane): Lanes {
 export function requestUpdateLane(): Lane {
 	return SyncLane;
 }
+
+export function getHighestPriorityLane(lanes: Lanes): Lane {
+	return lanes & -lanes;
+}
