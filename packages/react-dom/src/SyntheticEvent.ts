@@ -1,5 +1,5 @@
-import { Container } from 'hostConfig';
-import { Props } from 'shared/ReactTypes';
+import type { Container } from 'hostConfig';
+import type { Props } from 'shared/ReactTypes';
 
 export const elementPropsKey = '__props';
 const validEventTypeList = ['click'];
@@ -56,7 +56,8 @@ function dispatchEvent(container: Container, eventType: string, e: Event) {
 	const targetElement = e.target;
 
 	if (targetElement === null) {
-		console.warn('事件不存在target', e);
+		console.warn('事件不存在 target', e);
+		return;
 	}
 	// 1. 收集沿途的事件
 	const { bubble, capture } = collectPaths(
