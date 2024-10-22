@@ -1,7 +1,8 @@
+import type { Props } from 'shared/ReactTypes';
+import type { DOMElement } from './SyntheticEvent';
+import { updateFiberProps } from './SyntheticEvent';
 import { FiberNode } from 'react-reconciler/src/fiber';
 import { HostText } from 'react-reconciler/src/workTags';
-import { DOMElement, updateFiberProps } from './SyntheticEvent';
-import { Props } from 'shared/ReactTypes';
 
 export type Container = Element;
 export type Instance = Element;
@@ -33,9 +34,8 @@ export function commitUpdate(fiber: FiberNode) {
 			return commitTextUpdate(fiber.stateNode, text);
 		default:
 			if (__DEV__) {
-				console.warn('未实现的update', fiber);
+				console.warn('(commitUpdate)', '未实现的 update 类型', fiber);
 			}
-			break;
 	}
 }
 
@@ -44,8 +44,8 @@ export function commitTextUpdate(textInstance: TextInstance, content: string) {
 }
 
 export function removeChild(
-	child: Instance | TextInstance,
-	container: Container
+	container: Container,
+	child: Instance | TextInstance
 ) {
 	container.removeChild(child);
 }
