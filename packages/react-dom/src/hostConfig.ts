@@ -2,7 +2,7 @@ import type { Props } from 'shared/ReactTypes';
 import type { DOMElement } from './SyntheticEvent';
 import { updateFiberProps } from './SyntheticEvent';
 import { FiberNode } from 'react-reconciler/src/fiber';
-import { HostText } from 'react-reconciler/src/workTags';
+import { HostComponent, HostText } from 'react-reconciler/src/workTags';
 
 export type Container = Element;
 export type Instance = Element;
@@ -30,8 +30,10 @@ export const appendChildToContainer = appendInitialChild;
 export function commitUpdate(fiber: FiberNode) {
 	switch (fiber.tag) {
 		case HostText:
-			const text = fiber.memorizedProps.content;
+			const text = fiber.memorizedProps?.content;
 			return commitTextUpdate(fiber.stateNode, text);
+		case HostComponent:
+			return updateFiberProps(fiber.stateNode, fiber.memorizedProps);
 		default:
 			if (__DEV__) {
 				console.warn('(commitUpdate)', '未实现的 update 类型', fiber);
@@ -44,8 +46,8 @@ export function commitTextUpdate(textInstance: TextInstance, content: string) {
 }
 
 export function removeChild(
-	container: Container,
-	child: Instance | TextInstance
+	child: Instance | TextInstance,
+	container: Container
 ) {
 	container.removeChild(child);
 }
