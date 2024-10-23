@@ -58,7 +58,7 @@ export function insertChildToContainer(
 	container.insertBefore(child, before);
 }
 
-export const scheduleMicrotask =
+export const scheduleMicroTask =
 	typeof queueMicrotask === 'function'
 		? queueMicrotask
 		: typeof Promise === 'function'

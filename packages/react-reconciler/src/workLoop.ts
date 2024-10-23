@@ -18,7 +18,7 @@ import {
 	mergeLanes
 } from './fiberLanes';
 import { HostRoot } from './workTags';
-import { scheduleMicrotask } from 'hostConfig';
+import { scheduleMicroTask } from 'hostConfig';
 import { flushSyncCallbacks, scheduleSyncCallback } from './syncTaskQueue';
 import {
 	unstable_scheduleCallback as scheduleCallback,
@@ -49,7 +49,7 @@ function ensureRootIsScheduled(root: FiberRootNode) {
 				updateLane
 			);
 			scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane));
-			scheduleMicrotask(flushSyncCallbacks);
+			scheduleMicroTask(flushSyncCallbacks);
 		}
 	} else {
 		// 其它优先级，用宏任务调度
