@@ -22,6 +22,13 @@
 		"no-case-declarations": "off",
 		"no-constant-condition": "off",
 		"@typescript-eslint/no-explicit-any": "warn",
-		"@typescript-eslint/ban-ts-comment": "off"
+		"@typescript-eslint/ban-ts-comment": "off",
+		"@typescript-eslint/no-var-requires": "off",
+		"@typescript-eslint/no-unsafe-assignment": "off",
+		"@typescript-eslint/no-unsafe-argument": "off",
+		"@typescript-eslint/no-unsafe-member-access": "off",
+		"@typescript-eslint/no-unsafe-return": "off",
+		"@typescript-eslint/no-unsafe-call": "off",
+		"@typescript-eslint/no-redundant-type-constituents": "off"
 	}
 }

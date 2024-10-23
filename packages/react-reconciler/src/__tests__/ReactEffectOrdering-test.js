@@ -24,7 +24,7 @@ describe('ReactHooksWithNoopRenderer', () => {
 		jest.useFakeTimers();
 
 		React = require('react');
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
+
 		act = require('jest-react').act;
 		Scheduler = require('scheduler');
 		ReactNoop = require('react-noop-renderer');
