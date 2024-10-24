@@ -48,13 +48,15 @@ type EffectDeps = Array<any> | null;
 const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState,
 	useEffect: mountEffect,
-	useTransition: mountTransition
+	useTransition: mountTransition,
+	useRef: mountRef
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
 	useState: updateState,
 	useEffect: updateEffect,
-	useTransition: updateTransition
+	useTransition: updateTransition,
+	useRef: updateRef
 };
 
 export function renderWithHooks(wip: FiberNode, lane: Lane) {
@@ -359,4 +361,17 @@ function startTransition(setPending: Dispatch<boolean>, callback: () => void) {
 	setPending(false);
 
 	currentBatchConfig.transition = prevTransition;
+}
+
+function mountRef<T>(initialValue: T): { current: T } {
+	const hook = mountWorkInProgressHook();
+	const ref = { current: initialValue };
+	hook.memorizedState = ref;
+	return ref;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function updateRef<T>(initialValue: T): { current: T } {
+	const hook = updateWorkInProgressHook();
+	return hook.memorizedState;
 }

@@ -12,7 +12,7 @@ import {
 	HostRoot,
 	HostText
 } from './workTags';
-import { NoFlags, Update } from './fiberFlags';
+import { NoFlags, Ref, Update } from './fiberFlags';
 function markUpdate(fiber: FiberNode) {
 	fiber.flags |= Update;
 }
@@ -30,6 +30,9 @@ export const completeWork = (wip: FiberNode) => {
 				const instance = createInstance(wip.type, newProps);
 				appendAllChildren(instance, wip);
 				wip.stateNode = instance;
+			}
+			if (current?.ref !== wip.ref) {
+				markRef(wip);
 			}
 			bubbleProperties(wip);
 			return null;
@@ -97,4 +100,8 @@ function bubbleProperties(wip: FiberNode) {
 		child = child.sibling;
 	}
 	wip.subtreeFlags |= subtreeFlags;
+}
+
+function markRef(fiber: FiberNode) {
+	fiber.flags |= Ref;
 }

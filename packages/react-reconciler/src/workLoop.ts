@@ -3,6 +3,7 @@ import {
 	commitHookEffectListCreate,
 	commitHookEffectListDestroy,
 	commitHookEffectListUnmount,
+	commitLayoutEffects,
 	commitMutationEffects
 } from './commitWork';
 import { completeWork } from './completeWork';
@@ -341,6 +342,7 @@ function commitRoot(root: FiberRootNode) {
 	if (subtreeHasEffects || rootHasEffect) {
 		commitMutationEffects(finishedWork, root);
 		root.current = finishedWork;
+		commitLayoutEffects(finishedWork, root);
 	} else {
 		root.current = finishedWork;
 	}

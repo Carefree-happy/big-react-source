@@ -12,7 +12,7 @@ import {
 	HostText
 } from './workTags';
 import { Lane } from './fiberLanes';
-
+import { Ref } from './fiberFlags';
 // 递归中的递阶段
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
 	switch (wip.tag) {
@@ -63,6 +63,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 function updateHostComponent(wip: FiberNode) {
 	const nextProps = wip.pendingProps;
 	const nextChildren = nextProps.children;
+	markRef(wip.alternate, wip);
 	reconcileChildren(wip, nextChildren);
 	return wip.child;
 }
@@ -73,5 +74,17 @@ function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
 		wip.child = mountChildFibers(wip, null, children);
 	} else {
 		wip.child = reconcileChildFibers(wip, current.child, children);
+	}
+}
+
+function markRef(current: FiberNode | null, wip: FiberNode) {
+	const ref = wip.ref;
+	if (
+		// mount时：存在ref
+		(current === null && ref !== null) ||
+		// update时：ref引用变化
+		(current !== null && current.ref !== ref)
+	) {
+		wip.flags |= Ref;
 	}
 }
