@@ -29,9 +29,10 @@ export const appendChildToContainer = appendInitialChild;
 
 export function commitUpdate(fiber: FiberNode) {
 	switch (fiber.tag) {
-		case HostText:
+		case HostText: {
 			const text = fiber.memorizedProps?.content;
 			return commitTextUpdate(fiber.stateNode, text);
+		}
 		case HostComponent:
 			return updateFiberProps(fiber.stateNode, fiber.memorizedProps);
 		default:
@@ -64,5 +65,6 @@ export const scheduleMicroTask =
 	typeof queueMicrotask === 'function'
 		? queueMicrotask
 		: typeof Promise === 'function'
-			? (callback: (...args: any[]) => void) => Promise.resolve().then(callback)
+			? (callback: (...args: any) => void) =>
+					Promise.resolve(null).then(callback)
 			: setTimeout;

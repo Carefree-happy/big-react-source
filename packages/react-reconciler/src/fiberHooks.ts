@@ -9,6 +9,7 @@ import {
 	processUpdateQueue
 } from './updateQueue';
 import { scheduleUpdateOnFiber } from './workLoop';
+import currentBatchConfig from 'react/src/currentBatchConfig';
 import type { FiberNode } from './fiber';
 import type { Update, UpdateQueue } from './updateQueue';
 import type { Dispatch, Dispatcher } from 'react/src/currentDispatcher';
@@ -46,12 +47,14 @@ type EffectDeps = Array<any> | null;
 
 const HooksDispatcherOnMount: Dispatcher = {
 	useState: mountState,
-	useEffect: mountEffect
+	useEffect: mountEffect,
+	useTransition: mountTransition
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
 	useState: updateState,
-	useEffect: updateEffect
+	useEffect: updateEffect,
+	useTransition: updateTransition
 };
 
 export function renderWithHooks(wip: FiberNode, lane: Lane) {
@@ -187,10 +190,10 @@ function mountState<State>(
 	} else {
 		memorizedState = initialState;
 	}
-	hook.memorizedState = memorizedState;
-
 	const queue = createUpdateQueue<State>();
 	hook.updateQueue = queue;
+	hook.memorizedState = memorizedState;
+	hook.baseState = memorizedState;
 
 	// @ts-expect-error TODO: fix this
 	const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
@@ -228,17 +231,17 @@ function updateState<State>(): [State, Dispatch<State>] {
 		// 保存在current中
 		current.baseQueue = pending;
 		queue.shared.pending = null;
+	}
 
-		if (baseQueue !== null) {
-			const {
-				memorizedState,
-				baseQueue: newBaseQueue,
-				baseState: newBaseState
-			} = processUpdateQueue(baseState, baseQueue, renderLane);
-			hook.memorizedState = memorizedState;
-			hook.baseState = newBaseState;
-			hook.baseQueue = newBaseQueue;
-		}
+	if (baseQueue !== null) {
+		const {
+			memorizedState,
+			baseQueue: newBaseQueue,
+			baseState: newBaseState
+		} = processUpdateQueue(baseState, baseQueue, renderLane);
+		hook.memorizedState = memorizedState;
+		hook.baseState = newBaseState;
+		hook.baseQueue = newBaseQueue;
 	}
 
 	return [hook.memorizedState, queue.dispatch as Dispatch<State>];
@@ -330,4 +333,30 @@ function updateWorkInProgressHook(): Hook {
 		workInProgressHook = newHook;
 	}
 	return workInProgressHook;
+}
+
+function mountTransition(): [boolean, (callback: () => void) => void] {
+	const [isPending, setPending] = mountState(false);
+	const hook = mountWorkInProgressHook();
+	const start = startTransition.bind(null, setPending);
+	hook.memorizedState = start;
+	return [isPending, start];
+}
+
+function updateTransition(): [boolean, (callback: () => void) => void] {
+	const [isPending] = updateState();
+	const hook = updateWorkInProgressHook();
+	const start = hook.memorizedState;
+	return [isPending as boolean, start];
+}
+
+function startTransition(setPending: Dispatch<boolean>, callback: () => void) {
+	setPending(true);
+	const prevTransition = currentBatchConfig.transition;
+	currentBatchConfig.transition = 1;
+
+	callback();
+	setPending(false);
+
+	currentBatchConfig.transition = prevTransition;
 }

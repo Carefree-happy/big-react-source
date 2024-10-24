@@ -39,7 +39,6 @@ let wipRootRenderLane: Lane = NoLane;
  */
 let rootDoesHasPassiveEffects: boolean = false;
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 type RootExitStatus = typeof RootIncomplete | typeof RootCompleted;
 const RootIncomplete = 1;
 const RootCompleted = 2;
@@ -94,17 +93,17 @@ function ensureRootIsScheduled(root: FiberRootNode) {
 
 	let newCallbackNode = null;
 
+	if (__DEV__) {
+		console.log(
+			`在${updateLane === SyncLane ? '微' : '宏'}任务中调度，优先级：`,
+			updateLane
+		);
+	}
+
 	if (updateLane === SyncLane) {
 		// 同步优先级，用微任务调度
-		if (__DEV__) {
-			console.warn(
-				'(ensureRootIsScheduled)',
-				'在微任务中调度，优先级：',
-				updateLane
-			);
-			scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
-			scheduleMicroTask(flushSyncCallbacks);
-		}
+		scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
+		scheduleMicroTask(flushSyncCallbacks);
 	} else {
 		// 其它优先级，用宏任务调度
 		// 与 vue，svelte 等框架不同的地方
@@ -212,7 +211,11 @@ function performSyncWorkOnRoot(root: FiberRootNode) {
 	}
 }
 
-function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
+function renderRoot(
+	root: FiberRootNode,
+	lane: Lane,
+	shouldTimeSlice: boolean
+): RootExitStatus {
 	if (__DEV__) {
 		console.warn(
 			'(renderRoot)',

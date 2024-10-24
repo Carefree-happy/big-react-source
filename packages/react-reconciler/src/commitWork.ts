@@ -174,20 +174,27 @@ function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
 	// 递归子树
 	commitNestedComponent(childToDelete, (unmountFiber) => {
 		switch (unmountFiber.tag) {
-			case HostComponent:
+			case HostComponent: {
 				recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
 				return;
-			case HostText:
+			}
+			case HostText: {
 				recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
 				return;
-			case FunctionComponent:
+			}
+			case FunctionComponent: {
 				commitPassiveEffect(unmountFiber, root, 'unmount');
 				return;
-			default:
+			}
+			default: {
 				if (__DEV__) {
-					console.warn('未处理的unmount类型', unmountFiber);
+					console.warn(
+						'(commitDeletion)',
+						'未处理的 unmount 类型',
+						unmountFiber
+					);
 				}
-				break;
+			}
 		}
 	});
 
@@ -234,12 +241,23 @@ function commitNestedComponent(
 
 const commitPlacement = (finishedWork: FiberNode) => {
 	if (__DEV__) {
-		console.log('执行commitPlacement操作', finishedWork);
+		console.warn('(commitPlacement)', '执行 Placement 操作', finishedWork);
 	}
+
+	// 找到最近的父级 host 节点
 	const hostParent = getHostParent(finishedWork);
-	const sibling = getHostSibling(finishedWork);
+
+	// 找到兄弟 host 节点
+	const hostSibling = getHostSibling(finishedWork);
+
 	if (hostParent !== null) {
-		insertOrAppendPlacementNodeIntoContainer(finishedWork, hostParent, sibling);
+		// 将 finishedWork 对应的 DOM 节点插入到父级节点中
+		// 或者插入父级节点的子节点之前
+		insertOrAppendPlacementNodeIntoContainer(
+			finishedWork,
+			hostParent,
+			hostSibling
+		);
 	}
 };
 
