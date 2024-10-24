@@ -1,6 +1,7 @@
 import type { Key, Props, ReactElementType, Ref } from 'shared/ReactTypes';
 import type { Container } from 'hostConfig';
 import type { WorkTag } from './workTags';
+import type { CallbackNode } from 'scheduler';
 import { Fragment } from './workTags';
 import { FunctionComponent, HostComponent } from './workTags';
 import type { Flags } from './fiberFlags';
@@ -66,6 +67,8 @@ export class FiberRootNode {
 	pendingLanes: Lanes;
 	finishedLane: Lane;
 	pendingPassiveEffects: PendingPassiveEffects;
+	callbackNode: CallbackNode | null;
+	callbackPriority: Lane;
 
 	constructor(container: Container, hostRootFiber: FiberNode) {
 		this.container = container;
@@ -78,6 +81,9 @@ export class FiberRootNode {
 			unmount: [],
 			update: []
 		};
+
+		this.callbackNode = null;
+		this.callbackPriority = NoLane;
 	}
 }
 
