@@ -1,8 +1,7 @@
-import type { Dispatch, Dispatcher } from 'react/src/currentDispatcher';
-import type { Action } from 'shared/ReactTypes';
-import type { FiberNode } from './fiber';
-import type { UpdateQueue } from './updateQueue';
 import internals from 'shared/internals';
+import { Flags, PassiveEffect } from './fiberFlags';
+import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
+import { HookHasEffect, Passive } from './hookEffectTags';
 import {
 	createUpdate,
 	createUpdateQueue,
@@ -10,9 +9,10 @@ import {
 	processUpdateQueue
 } from './updateQueue';
 import { scheduleUpdateOnFiber } from './workLoop';
-import { Lane, NoLane, requestUpdateLane } from './fiberLanes';
-import { Flags, PassiveEffect } from './fiberFlags';
-import { HookHasEffect, Passive } from './hookEffectTags';
+import type { FiberNode } from './fiber';
+import type { Update, UpdateQueue } from './updateQueue';
+import type { Dispatch, Dispatcher } from 'react/src/currentDispatcher';
+import type { Action } from 'shared/ReactTypes';
 
 let currentlyRenderingFiber: FiberNode | null = null;
 let workInProgressHook: Hook | null = null;
@@ -25,6 +25,8 @@ interface Hook {
 	memorizedState: any;
 	updateQueue: unknown;
 	next: Hook | null;
+	baseState: any;
+	baseQueue: Update<any> | null;
 }
 
 export interface Effect {
@@ -73,6 +75,8 @@ export function renderWithHooks(wip: FiberNode, lane: Lane) {
 	const children = Component(props);
 
 	currentlyRenderingFiber = null;
+	workInProgressHook = null;
+	currentHook = null;
 	renderLane = NoLane;
 	return children;
 }
@@ -178,9 +182,11 @@ function mountState<State>(
 	const hook = mountWorkInProgressHook();
 
 	let memorizedState;
-	if (initialState instanceof Function) memorizedState = initialState();
-	else memorizedState = initialState;
-
+	if (initialState instanceof Function) {
+		memorizedState = initialState();
+	} else {
+		memorizedState = initialState;
+	}
 	hook.memorizedState = memorizedState;
 
 	const queue = createUpdateQueue<State>();
@@ -197,16 +203,42 @@ function updateState<State>(): [State, Dispatch<State>] {
 	const hook = updateWorkInProgressHook();
 
 	const queue = hook.updateQueue as UpdateQueue<State>;
+	const baseState = hook.baseState;
 	const pending = queue.shared.pending;
+	const current = currentHook as Hook;
+	let baseQueue = current.baseQueue;
 	queue.shared.pending = null;
 
 	if (pending !== null) {
-		const { memorizedState } = processUpdateQueue(
-			hook.memorizedState,
-			pending,
-			renderLane
-		);
-		hook.memorizedState = memorizedState;
+		// pending baseQueue update保存在current中
+		if (baseQueue !== null) {
+			// baseQueue b2 -> b0 -> b1 -> b2
+			// pendingQueue p2 -> p0 -> p1 -> p2
+			// b0
+			const baseFirst = baseQueue.next;
+			// p0
+			const pendingFirst = pending.next;
+			// b2 -> p0
+			baseQueue.next = pendingFirst;
+			// p2 -> b0
+			pending.next = baseFirst;
+			// p2 -> b0 -> b1 -> b2 -> p0 -> p1 -> p2
+		}
+		baseQueue = pending;
+		// 保存在current中
+		current.baseQueue = pending;
+		queue.shared.pending = null;
+
+		if (baseQueue !== null) {
+			const {
+				memorizedState,
+				baseQueue: newBaseQueue,
+				baseState: newBaseState
+			} = processUpdateQueue(baseState, baseQueue, renderLane);
+			hook.memorizedState = memorizedState;
+			hook.baseState = newBaseState;
+			hook.baseQueue = newBaseQueue;
+		}
 	}
 
 	return [hook.memorizedState, queue.dispatch as Dispatch<State>];
@@ -227,13 +259,17 @@ function mountWorkInProgressHook(): Hook {
 	const hook: Hook = {
 		memorizedState: null,
 		updateQueue: null,
-		next: null
+		next: null,
+		baseQueue: null,
+		baseState: null
 	};
 
 	if (workInProgressHook === null) {
 		// mount 时第一个 hook
 		if (currentlyRenderingFiber === null) {
-			throw new Error('请在函数组件中调用 hooks');
+			throw new Error(
+				'hooks can only be called inside the body of a function component.'
+			);
 		} else {
 			workInProgressHook = hook;
 			currentlyRenderingFiber.memorizedState = workInProgressHook;
@@ -250,9 +286,10 @@ function updateWorkInProgressHook(): Hook {
 	let nextCurrentHook: Hook | null;
 
 	if (currentHook === null) {
+		// update 时第一个 hook
 		const current = currentlyRenderingFiber?.alternate;
-		if (current !== null) {
-			nextCurrentHook = current?.memorizedState;
+		if (current && current !== null) {
+			nextCurrentHook = current.memorizedState;
 		} else {
 			nextCurrentHook = null;
 		}
@@ -260,17 +297,29 @@ function updateWorkInProgressHook(): Hook {
 		nextCurrentHook = currentHook.next;
 	}
 
-	currentHook = nextCurrentHook as Hook;
+	if (nextCurrentHook === null) {
+		// nextCurrentHook 不存在，说明 hooks 数量不一致，因为不是 mount，currentlyRenderingFiber 一定存在
+		// mount/update u1, u2, u3
+		// update       u1, u2, u3, u4
+		// 经过 nextCurrentHook = currentHook.next 导致 nextCurrentHook 为 null
+		throw new Error('Rendered more hooks than during the previous render.');
+	}
+
+	currentHook = nextCurrentHook;
 	const newHook: Hook = {
 		memorizedState: currentHook.memorizedState,
 		updateQueue: currentHook.updateQueue,
-		next: null
+		next: null,
+		baseQueue: currentHook.baseQueue,
+		baseState: currentHook.baseState
 	};
 
 	if (workInProgressHook === null) {
 		// mount 时第一个 hook
 		if (currentlyRenderingFiber === null) {
-			throw new Error('请在函数组件中调用 hooks');
+			throw new Error(
+				'hooks can only be called inside the body of a function component.'
+			);
 		} else {
 			workInProgressHook = newHook;
 			currentlyRenderingFiber.memorizedState = workInProgressHook;
